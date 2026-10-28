@@ -57,10 +57,28 @@ else
   [ -e "$VENV" ] && { log "venv missing/broken (dangling base interpreter?) — rebuilding"; rm -rf "$VENV"; }
   PYBASE="$(command -v python3)"; [ -n "$PYBASE" ] || { log "FATAL: no python3 on PATH to build the venv"; exit 1; }
   log "creating venv ($PYBASE) -> $VENV"
-  "$PYBASE" -m venv "$VENV"
+  # Ubuntu/Debian installations may omit python3-venv. Prefer the system
+  # module when available, but fall back to the self-contained uv runtime so
+  # Danus can bootstrap without root privileges. uv is intentionally optional
+  # and is only used when the standard module is unavailable.
+  if ! "$PYBASE" -m venv "$VENV" 2>/dev/null; then
+    command -v uv >/dev/null 2>&1 || {
+      log "FATAL: python3-venv is unavailable and uv is not on PATH";
+      log "Install python3-venv or uv, then re-run bootstrap";
+      exit 1;
+    }
+    log "python3-venv unavailable; creating venv with uv"
+    rm -rf "$VENV"
+    uv venv --python "$PYBASE" "$VENV"
+  fi
   log "installing python deps (mcp/fastapi/uvicorn/pydantic/openai/anthropic)"
-  $NICE "$VENV/bin/pip" install --quiet --no-cache-dir --upgrade pip >/dev/null 2>&1 || true
-  $NICE "$VENV/bin/pip" install --quiet --no-cache-dir \
+  if [ -x "$VENV/bin/pip" ]; then
+    PIP=("$VENV/bin/pip" install)
+  else
+    PIP=(uv pip install --python "$VENV/bin/python")
+  fi
+  $NICE "${PIP[@]}" --quiet --no-cache-dir --upgrade pip >/dev/null 2>&1 || true
+  $NICE "${PIP[@]}" --quiet --no-cache-dir \
     "mcp>=1.0.0" "fastapi>=0.110.0" "uvicorn>=0.30.0" "pydantic>=2.0" "openai>=2.40" \
     "anthropic>=0.92" \
     || { log "FATAL: pip install failed"; exit 1; }
@@ -77,7 +95,12 @@ if (cd / && "$VENV/bin/python" -c 'import danus' 2>/dev/null); then
   log "danus package present in venv"
 else
   log "installing the danus package (editable) into the venv"
-  $NICE "$VENV/bin/pip" install --quiet --no-cache-dir -e "$DANUS_ROOT" \
+  if [ -x "$VENV/bin/pip" ]; then
+    PIP=("$VENV/bin/pip" install)
+  else
+    PIP=(uv pip install --python "$VENV/bin/python")
+  fi
+  $NICE "${PIP[@]}" --quiet --no-cache-dir -e "$DANUS_ROOT" \
     || { log "FATAL: pip install -e failed (the danus package)"; exit 1; }
   (cd / && "$VENV/bin/python" -c 'import danus') \
     || { log "FATAL: danus still not importable after editable install"; exit 1; }
