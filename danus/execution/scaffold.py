@@ -66,6 +66,9 @@ _CODEX_CONFIG = """\
 [mcp_servers.danus]
 command = {python}
 args = ["-m", "danus.gateway"]
+# This is our own role-gated local gateway. Headless workers cannot answer
+# Codex's per-MCP-tool confirmation prompts.
+default_tools_approval_mode = "approve"
 # fact_submit blocks on the verify service (a cold-started codex that can reason
 # for minutes on a hard proof); codex's default tool-call timeout is 120s, which
 # would abort those legitimate long verifications. Match the verify HTTP timeout.

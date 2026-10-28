@@ -206,7 +206,7 @@ with persisting on a route whose mechanism is no longer credible.
 
 ## Runtime
 
-The main Codex session is configured in `.codex/config.toml` with `ultra`
+The main Codex session is configured in `.codex/config.toml` with `xhigh`
 reasoning effort and the main-role Danus MCP servers. Workers use the separately
 configured `DANUS_WORKER_MODEL` and their own role-gated MCP surface.
 

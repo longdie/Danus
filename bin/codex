@@ -19,4 +19,12 @@ _main_model="${DANUS_MAIN_MODEL:-${DANUS_CODEX_MODEL:-}}"
 if [ -n "$_main_model" ] && { [ "$#" -eq 0 ] || [ "${1#-}" != "$1" ]; }; then
   set -- --model "$_main_model" "$@"
 fi
-exec "$DANUS_NODE" "$DANUS_CODEX_JS" "$@"
+# Suppress optional ChatGPT plugin requests for BYO API deployments and avoid
+# passing credentials into model-spawned shell commands. Child Codex wrappers
+# load their own credentials through scripts/env.sh when needed.
+exec "$DANUS_NODE" "$DANUS_CODEX_JS" \
+  -c 'features.plugins=false' \
+  -c 'features.responses_websockets=false' \
+  -c 'features.responses_websockets_v2=false' \
+  -c 'shell_environment_policy.exclude=["*KEY*","*TOKEN*","*SECRET*","*PASSWORD*"]' \
+  "$@"

@@ -3,17 +3,18 @@
 # DANUS_AGENTS_ROOT / DANUS_VERIFY_URL / PATH are resolved at launch, not
 # hard-coded here. tool_timeout_sec is kept wide so a cold-start verify or a
 # long-paper verification returns its own honest verdict instead of being cut off.
-model = "gpt-5.6-sol"
-review_model = "gpt-5.6-sol"
-model_reasoning_effort = "ultra"
-disable_response_storage = true
-windows_wsl_setup_acknowledged = true
+model = "gpt-6.1-sol"
+review_model = "gpt-6.1-sol"
+model_reasoning_effort = "xhigh"
 
 [sandbox_workspace_write]
 network_access = true
 
 [features]
 goals = true
+plugins = false
+responses_websockets = false
+responses_websockets_v2 = false
 
 # Main-thread wall-clock control. `clock.sleep` is a real, input-interruptible
 # wait; Goal continuity and timed wake-ups are deliberately separate mechanisms.
@@ -31,6 +32,7 @@ sleep_tool = true
 [mcp_servers.danus]
 command = "./bin/danus-mcp"
 cwd = "."
+default_tools_approval_mode = "approve"
 tool_timeout_sec = 100000
 
 [mcp_servers.danus.env]
@@ -41,6 +43,7 @@ DANUS_VERIFY_TIMEOUT = "90000"
 [mcp_servers.write-paper]
 command = "./bin/write-paper-mcp"
 cwd = "."
+default_tools_approval_mode = "approve"
 # The isolated authoring/verifier subprocess has a generous 86400s budget. Keep
 # the MCP envelope wider so long-paper verification returns its own honest
 # verdict/timeout instead of being cut off by the main-agent client.
@@ -55,6 +58,7 @@ DANUS_PAPER_VERIFY_WHOLE_DOC_CAP = "2000000"
 [mcp_servers.human-summary]
 command = "./bin/human-summary-mcp"
 cwd = "."
+default_tools_approval_mode = "approve"
 tool_timeout_sec = 100000
 
 [mcp_servers.human-summary.env]
